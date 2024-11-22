@@ -85,7 +85,7 @@ export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:$PATH"
 info "Appending environment variables to $HOME/.zshrc"
 {
     echo 'export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:$PATH"'
-    echo 'export ANDROID_HOME="$HOME/Android/Sdk"'
+    echo 'export ANDROID_HOME="$HOME/Library/Android/sdk"'
     echo 'export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk)"'
     echo 'export JAVA_HOME="$HOME/.local/share/mise/installs/java/${JAVA_CORRETTO_21_VERSION}"'
     echo 'export CHROME_EXECUTABLE="/Applications/Arc.app/Contents/MacOS/Arc"'
