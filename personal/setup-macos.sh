@@ -259,7 +259,7 @@ for package in "${MISE_PACKAGES[@]}"; do
     if ! mise list | grep -q "$package"; then
         info "Installing $package with mise"
 
-        if ! mise install "$package"; then
+        if ! mise install -y "$package"; then
             error "Failed to install $package with mise"
 
             exit 1
