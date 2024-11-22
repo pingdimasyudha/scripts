@@ -66,6 +66,42 @@ error() {
     echo -e "\033[1;31m[ERROR]\033[0m $*" >&2
 }
 
+# Function to add or merge environment variables in .zshrc
+add_or_merge_export() {
+    local var_name="$1"
+    local var_value="$2"
+
+    if grep -qE "^export $var_name=" "$HOME/.zshrc"; then
+        if [ "$var_name" = "PATH" ]; then
+            info "Merging PATH environment variable in .zshrc"
+            
+            existing_value=$(grep -E "^export PATH=" "$HOME/.zshrc" | sed 's/^export PATH=//' | tr -d '"')
+            new_value="$var_value:$existing_value"
+            sed -i '' "s|^export PATH=.*|export PATH=\"$new_value\"|" "$HOME/.zshrc"
+        else
+            info "Variable $var_name already exists in .zshrc, skipping"
+        fi
+    else
+        echo "export $var_name=\"$var_value\"" >> "$HOME/.zshrc"
+    fi
+}
+
+# Function to add host entries to /etc/hosts if they don't already exist
+add_host_entry() {
+    local ip_address="$1"
+    local domain_name="$2"
+
+    if grep -qE "^\s*$ip_address\s+$domain_name\s*$" /etc/hosts; then
+        info "Host entry for $domain_name with IP $ip_address already exists, skipping"
+    else
+        if ! echo "$ip_address    $domain_name" | sudo tee -a /etc/hosts >/dev/null; then
+            error "Failed to add host entry for $domain_name"
+
+            exit 1
+        fi
+    fi
+}
+
 # ==============================================================================
 # Update PATH Environment Variable
 # ------------------------------------------------------------------------------
@@ -73,6 +109,7 @@ error() {
 # ==============================================================================
 
 info "Updating PATH environment variable"
+
 export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:$PATH"
 
 # ==============================================================================
@@ -83,15 +120,22 @@ export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:$PATH"
 # ==============================================================================
 
 info "Appending environment variables to $HOME/.zshrc"
-{
-    echo 'export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:$PATH"'
-    echo 'export ANDROID_HOME="$HOME/Library/Android/sdk"'
-    echo 'export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk)"'
-    echo 'export JAVA_HOME="$HOME/.local/share/mise/installs/java/${JAVA_CORRETTO_21_VERSION}"'
-    echo 'export CHROME_EXECUTABLE="/Applications/Arc.app/Contents/MacOS/Arc"'
-    echo 'export VISUAL="nano"'
-    echo 'export EDITOR="nano"'
-} >> "$HOME/.zshrc" || { error "Failed to append to $HOME/.zshrc"; exit 1; }
+
+ENV_VARS=(
+    "PATH $HOME/.local/share/mise/shims:/opt/homebrew/bin:\$PATH"
+    "ANDROID_HOME $HOME/Android/Sdk"
+    "NDK_HOME \$ANDROID_HOME/ndk/\$(ls -1 \$ANDROID_HOME/ndk)"
+    "JAVA_HOME $HOME/.local/share/mise/installs/java/$JAVA_CORRETTO_21_VERSION"
+    "CHROME_EXECUTABLE /Applications/Arc.app/Contents/MacOS/Arc"
+    "VISUAL nano"
+    "EDITOR nano"
+)
+
+for entry in "${ENV_VARS[@]}"; do
+    var_name=$(echo "$entry" | awk '{print $1}')
+    var_value=$(echo "$entry" | cut -d' ' -f2-)
+    add_or_merge_export "$var_name" "$var_value"
+done
 
 # ==============================================================================
 # Update /etc/hosts File
@@ -101,45 +145,44 @@ info "Appending environment variables to $HOME/.zshrc"
 
 info "Updating /etc/hosts file with necessary entries"
 
-HOSTS_CONTENT=$(cat <<EOF
-151.101.129.140   i.redditmedia.com
-52.34.230.181     www.reddithelp.com
-151.101.65.140    g.redditmedia.com
-151.101.65.140    a.thumbs.redditmedia.com
-151.101.1.140     redditgifts.com
-151.101.1.140     i.redd.it
-151.101.1.140     old.reddit.com
-151.101.1.140     new.reddit.com
-151.101.129.140   reddit.com
-151.101.129.140   gateway.reddit.com
-151.101.129.140   oauth.reddit.com
-151.101.129.140   sendbird.reddit.com
-151.101.129.140   v.redd.it
-151.101.1.140     b.thumbs.redditmedia.com
-151.101.1.140     events.reddit.com
-54.210.123.98     stats.redditmedia.com
-151.101.65.140    www.redditstatic.com
-151.101.193.140   www.reddit.com
-52.3.23.26        pixel.redditmedia.com
-151.101.65.140    www.redditmedia.com
-151.101.193.140   about.reddit.com
-151.101.1.140     out.reddit.com
-107.23.236.34     events.redditmedia.com
-151.101.61.140    e.reddit.com
-151.101.197.140   s.redditmedia.com
-146.75.25.140     gql.reddit.com
-151.101.1.140     alb.reddit.com
-34.207.103.54     sendbirdproxy-06490ff42851cbcc5.chat.redditmedia.com
-52.207.213.188    sendbirdproxy-003d8d1fb8653f6f8.chat.redditmedia.com
-34.226.121.89     sendbirdproxy-04ea6c3f71aac3e3f.chat.redditmedia.com
-EOF
+HOST_ENTRIES=(
+    "151.101.129.140   i.redditmedia.com"
+    "52.34.230.181     www.reddithelp.com"
+    "151.101.65.140    g.redditmedia.com"
+    "151.101.65.140    a.thumbs.redditmedia.com"
+    "151.101.1.140     redditgifts.com"
+    "151.101.1.140     i.redd.it"
+    "151.101.1.140     old.reddit.com"
+    "151.101.1.140     new.reddit.com"
+    "151.101.129.140   reddit.com"
+    "151.101.129.140   gateway.reddit.com"
+    "151.101.129.140   oauth.reddit.com"
+    "151.101.129.140   sendbird.reddit.com"
+    "151.101.129.140   v.redd.it"
+    "151.101.1.140     b.thumbs.redditmedia.com"
+    "151.101.1.140     events.reddit.com"
+    "54.210.123.98     stats.redditmedia.com"
+    "151.101.65.140    www.redditstatic.com"
+    "151.101.193.140   www.reddit.com"
+    "52.3.23.26        pixel.redditmedia.com"
+    "151.101.65.140    www.redditmedia.com"
+    "151.101.193.140   about.reddit.com"
+    "151.101.1.140     out.reddit.com"
+    "107.23.236.34     events.redditmedia.com"
+    "151.101.61.140    e.reddit.com"
+    "151.101.197.140   s.redditmedia.com"
+    "146.75.25.140     gql.reddit.com"
+    "151.101.1.140     alb.reddit.com"
+    "34.207.103.54     sendbirdproxy-06490ff42851cbcc5.chat.redditmedia.com"
+    "52.207.213.188    sendbirdproxy-003d8d1fb8653f6f8.chat.redditmedia.com"
+    "34.226.121.89     sendbirdproxy-04ea6c3f71aac3e3f.chat.redditmedia.com"
 )
 
-if ! echo "$HOSTS_CONTENT" | sudo tee -a /etc/hosts >/dev/null; then
-    error "Failed to update /etc/hosts"
-
-    exit 1
-fi
+for entry in "${HOST_ENTRIES[@]}"; do
+    ip_address=$(echo "$entry" | awk '{print $1}')
+    domain_name=$(echo "$entry" | awk '{print $2}')
+    add_host_entry "$ip_address" "$domain_name"
+done
 
 # ==============================================================================
 # Install Homebrew
