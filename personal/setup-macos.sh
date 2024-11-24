@@ -74,7 +74,7 @@ add_or_merge_export() {
     if grep -qE "^export $var_name=" "$HOME/.zshrc"; then
         if [ "$var_name" = "PATH" ]; then
             info "Merging PATH environment variable in .zshrc"
-            
+
             existing_value=$(grep -E "^export PATH=" "$HOME/.zshrc" | sed 's/^export PATH=//' | tr -d '"')
             new_value="$var_value:$existing_value"
             sed -i '' "s|^export PATH=.*|export PATH=\"$new_value\"|" "$HOME/.zshrc"
@@ -251,6 +251,8 @@ done
 BREW_PACKAGES=(
     mise
     cocoapods
+    nsis
+    llvm
 )
 
 info "Installing brew packages"
