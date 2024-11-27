@@ -125,7 +125,7 @@ ENV_VARS=(
     "PATH $HOME/.local/share/mise/shims:/opt/homebrew/bin:\$PATH"
     "ANDROID_HOME $HOME/Android/Sdk"
     "NDK_HOME \$ANDROID_HOME/ndk/\$(ls -1 \$ANDROID_HOME/ndk)"
-    "JAVA_HOME $HOME/.local/share/mise/installs/java/$JAVA_CORRETTO_21_VERSION"
+    "JAVA_HOME $HOME/.local/share/mise/installs/java/corretto-$JAVA_CORRETTO_21_VERSION"
     "CHROME_EXECUTABLE /Applications/Arc.app/Contents/MacOS/Arc"
     "VISUAL nano"
     "EDITOR nano"
