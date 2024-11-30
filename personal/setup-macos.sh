@@ -253,6 +253,7 @@ BREW_PACKAGES=(
     cocoapods
     nsis
     llvm
+    openconnect
 )
 
 info "Installing brew packages"
