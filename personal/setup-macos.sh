@@ -224,6 +224,7 @@ BREW_CASK_PACKAGES=(
     android-studio
     microsoft-office
     discord
+    readdle-spark
 )
 
 info "Installing brew cask packages"
